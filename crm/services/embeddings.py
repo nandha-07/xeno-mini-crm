@@ -90,6 +90,8 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts -> list of 384-d float vectors."""
     if not texts:
         return []
+    if os.environ.get("DISABLE_AI_EMBEDDINGS", "false").lower() == "true":
+        return [[0.0] * EMBED_DIM for _ in texts]
     model = _get_model()
     return [vec.tolist() for vec in model.embed(texts)]
 
