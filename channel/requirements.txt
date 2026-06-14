@@ -14,7 +14,7 @@ celery>=5.4.0
 redis>=5.0.4
 
 # Validation & settings
-pydantic>=2.7.1
+pydantic[email]>=2.7.1
 pydantic-settings>=2.2.1
 
 # Dev / test
