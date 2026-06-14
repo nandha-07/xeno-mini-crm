@@ -63,7 +63,8 @@ export default function Home() {
       toast.error("Please enter a valid email address.");
       return;
     }
-    toast.success("Thanks! We'll be in touch shortly.");
+    window.location.href = `mailto:nandhakumar0242@gmail.com?subject=Contact Request from Xeno CRM&body=Hello Nandha,%0D%0A%0D%0APlease contact me back at: ${contactEmail}%0D%0A%0D%0AThank you!`;
+    toast.success("Opening your email client...");
     setContactEmail("");
   };
 
