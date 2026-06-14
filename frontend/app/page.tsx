@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Sparkles, ArrowRight, BrainCircuit, MessagesSquare, Target, Activity, Bot, FileSearch, Megaphone, Heart, Percent, Calculator, DatabaseZap, ChevronDown, BookOpen, FileText, BarChart, Mail, Mic, CalendarDays, ShoppingBag, Globe, Smartphone, Ticket, Database, UserCircle, Zap, MessageCircle, Gift, Award, LayoutDashboard, Tag, Star, Linkedin, Instagram, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const FEATURES = [
   {
@@ -51,10 +52,20 @@ const FEATURES = [
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
+  const [contactEmail, setContactEmail] = useState("");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleContactSubmit = () => {
+    if (!contactEmail || !contactEmail.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    toast.success("Thanks! We'll be in touch shortly.");
+    setContactEmail("");
+  };
 
   if (!mounted) return null;
 
@@ -312,8 +323,14 @@ export default function Home() {
                 type="email" 
                 placeholder="Enter Your Email" 
                 className="flex-1 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 px-3 text-sm font-medium"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleContactSubmit()}
               />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 transition-colors whitespace-nowrap text-sm">
+              <button 
+                onClick={handleContactSubmit}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 transition-colors whitespace-nowrap text-sm"
+              >
                 Contact me <ArrowRight className="w-4 h-4" />
               </button>
             </div>
