@@ -220,9 +220,9 @@ export default function CampaignsPage() {
       setCampaigns(campaigns.map((c) => (c.id === id ? { ...c, status: "running" } : c)));
       toast.success("Campaign successfully launched!", { id: "launch" });
       setSelectedCampId(id);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error launching campaign", err);
-      toast.error("Launch failed. Verification check: segment might be empty.", { id: "launch" });
+      toast.error(err.message || "Launch failed. Verification check: segment might be empty.", { id: "launch" });
     }
   };
 

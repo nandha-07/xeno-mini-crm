@@ -176,7 +176,32 @@ def launch_campaign_task(self, campaign_id: str, simulate: bool = False) -> None
 
         # 7. Concurrently send messages to channel-service
         logger.info(f"Sending {len(inserted_comms)} messages to channel service...")
-        send_results = asyncio.run(send_all_messages_with_limit(inserted_comms, simulate=simulate))
+        
+        def _run_in_thread(coro):
+            import threading
+            result = []
+            exc = []
+            def _runner():
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result.append(loop.run_until_complete(coro))
+                except Exception as e:
+                    exc.append(e)
+                finally:
+                    loop.close()
+            t = threading.Thread(target=_runner)
+            t.start()
+            t.join()
+            if exc:
+                raise exc[0]
+            return result[0]
+
+        try:
+            asyncio.get_running_loop()
+            send_results = _run_in_thread(send_all_messages_with_limit(inserted_comms, simulate=simulate))
+        except RuntimeError:
+            send_results = asyncio.run(send_all_messages_with_limit(inserted_comms, simulate=simulate))
 
         # 8. Update Communications status (sent / failed).
         # NOTE: we use UPDATE (not upsert) here. communications has NOT NULL
