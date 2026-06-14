@@ -21,6 +21,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+import requests
 
 from deps import OrgContext, get_org
 
@@ -208,16 +209,30 @@ async def google_login(body: GoogleLogin):
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured on the server.")
     try:
-        id_info = id_token.verify_oauth2_token(
-            body.token, 
-            google_requests.Request(), 
-            settings.GOOGLE_CLIENT_ID,
-            clock_skew_in_seconds=3600
-        )
-        email = id_info.get("email")
-        google_id = id_info.get("sub")
-        name = id_info.get("name", "Unknown Company")
-        
+        if "." in body.token:
+            id_info = id_token.verify_oauth2_token(
+                body.token, 
+                google_requests.Request(), 
+                settings.GOOGLE_CLIENT_ID,
+                clock_skew_in_seconds=3600
+            )
+            email = id_info.get("email")
+            google_id = id_info.get("sub")
+            name = id_info.get("name", "Unknown Company")
+        else:
+            # Handle Access Token
+            user_info_response = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {body.token}"}
+            )
+            if not user_info_response.ok:
+                raise HTTPException(status_code=400, detail="Invalid Google access token.")
+            
+            id_info = user_info_response.json()
+            email = id_info.get("email")
+            google_id = id_info.get("sub")
+            name = id_info.get("name", "Unknown Company")
+            
         if not email or not google_id:
             raise HTTPException(status_code=400, detail="Invalid Google token payload.")
             
