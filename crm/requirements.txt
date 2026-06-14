@@ -6,6 +6,7 @@ uvicorn[standard]>=0.29.0
 
 # Async HTTP (for calling channel service)
 httpx>=0.27.0
+requests>=2.31.0
 
 # Celery + Redis
 celery>=5.4.0
