@@ -209,7 +209,8 @@ async def google_login(body: GoogleLogin):
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured on the server.")
     try:
-        if "." in body.token:
+        # JWTs always have exactly two dots (header.payload.signature)
+        if body.token.count(".") == 2:
             id_info = id_token.verify_oauth2_token(
                 body.token, 
                 google_requests.Request(), 
