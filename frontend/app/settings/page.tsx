@@ -61,8 +61,8 @@ export default function SettingsPage() {
       setSmtpUser(data.smtp_username || "");
       setSmtpPass(data.smtp_password || "");
       setSmtpFrom(data.smtp_from_email || "");
-    } catch (err) {
-      console.error("Failed to fetch environment variables", err);
+    } catch {
+      // Non-admin users can't read env settings — this is expected
     }
   };
 
