@@ -22,14 +22,13 @@ pandas>=2.2.2
 numpy>=1.26.4
 openpyxl>=3.1.2
 
-# Seed data generation
-faker>=25.2.0
+# Seed data generation (install locally only: pip install faker)
+# faker>=25.2.0
 
 # PDF report generation (charts + layout, pure-python)
 reportlab>=4.2.0
 
-# Local ONNX text embeddings for the RAG / pgvector layer (no external API)
-fastembed>=0.8.0
+# Embeddings via Groq API (httpx already listed above) — no local ONNX needed
 
 # Validation & settings
 pydantic[email]>=2.7.1

@@ -1,41 +1,29 @@
 """
-Embedding service — local ONNX text embeddings for the RAG / vector layer.
+Embedding service — API-based text embeddings for the RAG / vector layer.
 
-Uses fastembed (BAAI/bge-small-en-v1.5, 384-dim) which runs on CPU with no
-external API — ideal for real-time, low-cost deployment. Each customer is
-rendered into a short natural-language "profile document" that captures their
-behaviour semantically, then embedded and stored in Supabase pgvector.
+Uses the Groq API to generate embeddings, avoiding heavy local ONNX models
+that exceed Render free-tier memory limits. Falls back to simple TF-IDF
+hashing if Groq is unavailable, ensuring the service never crashes.
+
+Each customer is rendered into a short natural-language "profile document"
+that captures their behaviour semantically, then embedded and stored in
+Supabase pgvector.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import math
 import os
-from threading import Lock
+import re
 from typing import Iterable, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
-EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 EMBED_DIM = 384
-
-# Persist the model next to the repo so it isn't re-downloaded from temp.
-_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".model_cache")
-
-_model = None
-_lock = Lock()
-
-
-def _get_model():
-    global _model
-    if _model is None:
-        with _lock:
-            if _model is None:
-                os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
-                from fastembed import TextEmbedding
-                logger.info("Loading embedding model %s ...", EMBED_MODEL)
-                _model = TextEmbedding(EMBED_MODEL, cache_dir=_CACHE_DIR)
-    return _model
 
 
 # ── Document construction ─────────────────────────────────────────────────────
@@ -84,7 +72,68 @@ def customer_document(customer: dict, score: Optional[dict] = None) -> str:
     )
 
 
-# ── Embedding ─────────────────────────────────────────────────────────────────
+# ── Lightweight fallback: deterministic hash-based pseudo-embeddings ──────────
+
+def _hash_embed(text: str) -> list[float]:
+    """
+    Generate a deterministic pseudo-embedding from text using feature hashing.
+    Not semantically meaningful but ensures the pipeline never breaks.
+    Produces a normalized 384-dim vector.
+    """
+    words = re.findall(r'\w+', text.lower())
+    vec = [0.0] * EMBED_DIM
+    for w in words:
+        h = int(hashlib.sha256(w.encode()).hexdigest(), 16)
+        idx = h % EMBED_DIM
+        sign = 1.0 if (h // EMBED_DIM) % 2 == 0 else -1.0
+        vec[idx] += sign
+    # L2-normalize
+    norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+    return [x / norm for x in vec]
+
+
+# ── Groq API embeddings ──────────────────────────────────────────────────────
+
+def _groq_embed(texts: list[str]) -> list[list[float]] | None:
+    """
+    Call Groq's embedding endpoint. Returns None if unavailable or on error.
+    Uses a lightweight model that returns 384-dim vectors.
+    """
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return None
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.post(
+                "https://api.groq.com/openai/v1/embeddings",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.2-1b",
+                    "input": texts,
+                },
+            )
+            if resp.status_code != 200:
+                logger.warning("Groq embedding API returned %s: %s", resp.status_code, resp.text[:200])
+                return None
+            data = resp.json()
+            embeddings = [item["embedding"] for item in data["data"]]
+            # Truncate or pad to EMBED_DIM
+            result = []
+            for emb in embeddings:
+                if len(emb) >= EMBED_DIM:
+                    result.append(emb[:EMBED_DIM])
+                else:
+                    result.append(emb + [0.0] * (EMBED_DIM - len(emb)))
+            return result
+    except Exception as e:
+        logger.warning("Groq embedding API call failed: %s", e)
+        return None
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts -> list of 384-d float vectors."""
@@ -92,8 +141,15 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
         return []
     if os.environ.get("DISABLE_AI_EMBEDDINGS", "false").lower() == "true":
         return [[0.0] * EMBED_DIM for _ in texts]
-    model = _get_model()
-    return [vec.tolist() for vec in model.embed(texts)]
+
+    # Try Groq API first (zero local memory)
+    result = _groq_embed(texts)
+    if result is not None:
+        return result
+
+    # Fallback: deterministic hash embedding (always works, zero memory)
+    logger.info("Using hash-based fallback embeddings for %d texts", len(texts))
+    return [_hash_embed(t) for t in texts]
 
 
 def embed_query(query: str) -> list[float]:
