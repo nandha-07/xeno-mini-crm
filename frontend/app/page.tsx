@@ -52,31 +52,9 @@ const FEATURES = [
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [contactEmail, setContactEmail] = useState("");
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleContactSubmit = async () => {
-    if (!contactEmail || !contactEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_CRM_API_URL || "http://localhost:8000"}/api/v1/auth/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: contactEmail })
-      });
-      if (!res.ok) throw new Error("Failed to submit");
-      toast.success("Thanks! We'll be in touch shortly.");
-      setContactEmail("");
-    } catch (err) {
-      toast.error("Something went wrong, please try again.");
-    }
-  };
 
   if (!mounted) return null;
 
@@ -328,24 +306,6 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col items-center pt-8 animate-slideUp" style={{ animationDelay: "0.3s" }}>
-            <div className="flex items-center bg-white rounded-full p-1.5 pl-6 shadow-xl shadow-orbit-blue/20 w-full max-w-md border border-slate-200">
-              <Mail className="w-5 h-5 text-slate-400" />
-              <input 
-                type="email" 
-                placeholder="Enter Your Email" 
-                className="flex-1 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 px-3 text-sm font-medium"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleContactSubmit()}
-              />
-              <button 
-                onClick={handleContactSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 transition-colors whitespace-nowrap text-sm"
-              >
-                Contact me <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            
             <div className="flex items-center justify-center gap-4 mt-8">
               <Link 
                 href="/login" 
