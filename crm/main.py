@@ -29,6 +29,7 @@ from routers import (
     segments,
     semantic,
     strategist,
+    tickets,
     tracking,
     settings as app_settings,
 )
@@ -85,6 +86,7 @@ app.include_router(copilot.router, prefix=PREFIX, tags=["Copilot"])
 app.include_router(auth.router, prefix=PREFIX, tags=["Auth"])
 app.include_router(imports.router, prefix=PREFIX, tags=["Imports"])
 app.include_router(feedback.router, prefix=PREFIX, tags=["Feedback"])
+app.include_router(tickets.router, prefix=PREFIX, tags=["Tickets"])
 app.include_router(strategist.router, prefix=PREFIX, tags=["Strategist"])
 app.include_router(reports.router, prefix=PREFIX, tags=["Reports"])
 app.include_router(app_settings.router, prefix=PREFIX, tags=["Settings"])

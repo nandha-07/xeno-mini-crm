@@ -255,6 +255,18 @@ export const channels = {
   status: () => request<{ email: boolean; sms: boolean; whatsapp: boolean; rcs: boolean }>("/channels/status"),
 };
 
+// ── Support Tickets ──────────────────────────────────────────────────────────
+export const tickets = {
+  list: () => request<{ tickets: any[] }>("/tickets"),
+  create: (data: {
+    ticket_type: string;
+    impact_level: string;
+    duration: string;
+    description: string;
+    point_of_contact: string;
+  }) => request<{ success: boolean; ticket_id: string }>("/tickets", { method: "POST", body: JSON.stringify(data) }),
+};
+
 export const api = {
-  customers, orders, segments, campaigns, analytics, auth, imports, feedback, strategist, reports, channels, profile, appSettings
+  customers, orders, segments, campaigns, analytics, auth, imports, feedback, strategist, reports, channels, profile, appSettings, tickets
 };

@@ -17,6 +17,7 @@ import {
   FileText,
   ScanSearch,
   LogOut,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSession, clearSession, type Session } from "@/lib/auth";
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { href: "/data", label: "Data Explorer", icon: Database },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
