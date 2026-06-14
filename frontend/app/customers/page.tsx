@@ -580,7 +580,7 @@ export default function CustomersPage() {
                         {details.first_name} {details.last_name || ""}
                       </h3>
                       <p className="text-xs text-slate-500">
-                        {details.city || "Unknown Location"} • {details.phone || details.email}
+                        {details.city || "Unknown Location"} • {maskContact(details.phone || details.email)}
                       </p>
                     </div>
                   )}
