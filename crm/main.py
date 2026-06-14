@@ -50,27 +50,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"DB warmup failed (will connect lazily): {e}")
 
-    # Keep the connection warm: a remote Postgres/PostgREST connection that sits
-    # idle gets torn down, and the next request pays the cold-start cost again.
-    # A cheap periodic ping keeps latency flat (~100ms instead of ~5s).
-    stop = asyncio.Event()
-
-    async def _keepalive():
-        while not stop.is_set():
-            try:
-                await asyncio.wait_for(stop.wait(), timeout=60)
-            except asyncio.TimeoutError:
-                try:
-                    await asyncio.to_thread(_ping_db)
-                except Exception as e:
-                    logger.debug(f"DB keepalive ping failed: {e}")
-
-    task = asyncio.create_task(_keepalive())
     try:
         yield
     finally:
-        stop.set()
-        task.cancel()
+        pass
 
 
 app = FastAPI(
