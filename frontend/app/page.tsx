@@ -58,14 +58,24 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  const handleContactSubmit = () => {
+  const handleContactSubmit = async () => {
     if (!contactEmail || !contactEmail.includes("@")) {
       toast.error("Please enter a valid email address.");
       return;
     }
-    window.location.href = `mailto:nandhakumar0242@gmail.com?subject=Contact Request from Xeno CRM&body=Hello Nandha,%0D%0A%0D%0APlease contact me back at: ${contactEmail}%0D%0A%0D%0AThank you!`;
-    toast.success("Opening your email client...");
-    setContactEmail("");
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_CRM_API_URL || "http://localhost:8000"}/api/v1/auth/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: contactEmail })
+      });
+      if (!res.ok) throw new Error("Failed to submit");
+      toast.success("Thanks! We'll be in touch shortly.");
+      setContactEmail("");
+    } catch (err) {
+      toast.error("Something went wrong, please try again.");
+    }
   };
 
   if (!mounted) return null;

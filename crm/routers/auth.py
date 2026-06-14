@@ -370,3 +370,43 @@ async def delete_organization(org_uuid: str, org: OrgContext = Depends(get_org))
     supabase.table("organizations").delete().eq("id", org_uuid).execute()
     logger.info(f"Deleted organization {org_uuid} ({found.data[0].get('company_name')}).")
     return {"deleted": True, "id": org_uuid}
+
+
+class ContactRequest(BaseModel):
+    email: str
+
+@router.post("/auth/contact")
+async def contact_request(body: ContactRequest):
+    """Save a contact request and email the admin."""
+    import uuid
+    from services.campaign_sender import send_message
+    
+    # Try sending an email via channel service
+    try:
+        await send_message(
+            communication_id=str(uuid.uuid4()),
+            campaign_id="contact-form",
+            customer_id="anonymous",
+            channel="email",
+            recipient_phone=None,
+            recipient_email="nandhakumar0242@gmail.com",
+            message=f"New contact request from {body.email}",
+            subject="New Lead from Xeno CRM",
+            idempotency_key=str(uuid.uuid4()),
+            html_body=f"<h3>New Contact Request</h3><p>Someone wants to reach out to you!</p><p>Email: <b>{body.email}</b></p>"
+        )
+    except Exception as e:
+        logger.error(f"Failed to send contact email: {e}")
+
+    # Also save as an organization in Supabase so the admin can see it in the DB
+    try:
+        payload = {
+            "org_id": "LEAD-" + secrets.token_hex(4).upper(),
+            "company_name": "CONTACT REQUEST",
+            "email": body.email,
+        }
+        supabase.table("organizations").insert(payload).execute()
+    except Exception as e:
+        logger.error(f"Failed to save lead to db: {e}")
+
+    return {"message": "Success"}
