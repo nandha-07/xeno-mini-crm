@@ -276,7 +276,6 @@ export default function WelcomePage() {
                             setSession({
                               role: res.role,
                               org_id: res.org_id,
-                              org_uuid: res.org_uuid,
                               company_name: res.company_name,
                               city: res.city,
                               country: res.country,

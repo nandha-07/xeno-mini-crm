@@ -13,6 +13,8 @@ export type Session = {
   city?: string | null;
   country?: string | null;
   website?: string | null;
+  admin_selected_org_uuid?: string | null;
+  admin_selected_org_name?: string | null;
   logged_in_at: string;
 };
 
