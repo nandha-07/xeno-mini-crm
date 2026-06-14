@@ -16,7 +16,7 @@ from typing import Iterable, Optional
 
 logger = logging.getLogger(__name__)
 
-EMBED_MODEL = "BAAI/bge-small-en-v1.5"
+EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 EMBED_DIM = 384
 
 # Persist the model next to the repo so it isn't re-downloaded from temp.
