@@ -1,0 +1,74 @@
+# Render Blueprint — Orbit / Xeno Mini CRM backend.
+# Provisions Redis + the CRM API + the Channel service in one shot.
+# The Next.js frontend deploys separately on Vercel.
+#
+# Free-tier note: Render background workers aren't free, so each service runs
+# its Celery worker in-process (detached) alongside the API. Secrets are marked
+# `sync: false` so they're entered in the Render dashboard, never committed.
+
+services:
+  # ── Redis — Celery broker + cache ────────────────────────────────────────
+  - type: redis
+    name: orbit-redis
+    plan: free
+    ipAllowList: []          # internal connections only (no public access)
+
+  # ── CRM API (Celery worker runs in-process, detached) ────────────────────
+  - type: web
+    name: orbit-crm
+    runtime: python
+    plan: free
+    rootDir: crm
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      celery -A celery_app worker -Q crm -P threads -c 2 --detach
+      --logfile=/tmp/celery-crm.log --pidfile=/tmp/celery-crm.pid &&
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: orbit-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false          # paste in dashboard
+      - key: SUPABASE_SERVICE_KEY
+        sync: false          # paste in dashboard (secret)
+      - key: GROQ_API_KEY
+        sync: false          # paste in dashboard (secret)
+      - key: CHANNEL_SERVICE_URL
+        sync: false          # set to the channel service URL after first deploy
+      - key: PUBLIC_BASE_URL
+        sync: false          # set to this CRM service URL after first deploy
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to the Vercel frontend URL after it deploys
+      - key: DEBUG
+        value: "false"
+
+  # ── Channel service — simulated messaging provider (worker in-process) ────
+  - type: web
+    name: orbit-channel
+    runtime: python
+    plan: free
+    rootDir: channel
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      celery -A celery_app worker -Q channel -P threads -c 2 --detach
+      --logfile=/tmp/celery-channel.log --pidfile=/tmp/celery-channel.pid &&
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: orbit-redis
+          property: connectionString
+      - key: CRM_RECEIPT_URL
+        sync: false          # set to <CRM service URL>/api/v1/receipts after deploy
+      - key: DEBUG
+        value: "false"
