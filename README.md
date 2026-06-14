@@ -1,8 +1,8 @@
-# Orbit — AI-Native Mini CRM
+# Xeno mini CRM — AI-Native Mini CRM
 
 > **"Your brand. Your shoppers. One AI that connects them."**
 
-Orbit is a full-stack, AI-native mini CRM for D2C and retail brands. It helps marketers decide **who to talk to**, **what to say**, and **how well it worked** — powered by Groq + Llama 3.3 70B, agentic tool calling, and a fully simulated two-service messaging loop.
+Xeno mini CRM is a full-stack, AI-native mini CRM for D2C and retail brands. It helps marketers decide **who to talk to**, **what to say**, and **how well it worked** — powered by Groq + Llama 3.3 70B, agentic tool calling, and a fully simulated two-service messaging loop.
 
 Built for the **Xeno Engineering Take-Home Assignment** (June 2026).
 
@@ -99,7 +99,7 @@ This models how real messaging providers (Twilio, Gupshup) work — webhook call
 
 ## AI Features
 
-Orbit has **8 distinct AI capabilities**, all powered by Groq + Llama 3.3 70B:
+Xeno mini CRM has **8 distinct AI capabilities**, all powered by Groq + Llama 3.3 70B:
 
 ### 1. NL2Segment — Natural Language → Database Query
 Type a description like *"customers who spent over ₹5000 but haven't ordered in 60 days"* and the AI translates it into a structured `filter_spec` JSON, executes it against Supabase, and returns matching customer count + preview.
