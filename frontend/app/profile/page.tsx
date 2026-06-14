@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true);
 
   useEffect(() => {
     fetchProfile();
@@ -38,6 +39,9 @@ export default function ProfilePage() {
       setCountry(data.country || "");
       setCustomerSize(data.customer_size || "");
       setTurnover(data.turnover || "");
+      if (data.has_password !== undefined) {
+        setHasPassword(data.has_password);
+      }
     } catch (err: any) {
       toast.error("Failed to load profile details");
     } finally {
@@ -73,7 +77,7 @@ export default function ProfilePage() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if ((hasPassword && !currentPassword) || !newPassword || !confirmPassword) {
       toast.error("Please fill all password fields");
       return;
     }
@@ -89,13 +93,14 @@ export default function ProfilePage() {
     setIsUpdatingPassword(true);
     try {
       await api.profile.changePassword({
-        current_password: currentPassword,
+        current_password: hasPassword ? currentPassword : undefined,
         new_password: newPassword,
       });
       toast.success("Password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setHasPassword(true);
     } catch (err: any) {
       toast.error(err.message ?? "Failed to update password");
     } finally {
@@ -270,21 +275,23 @@ export default function ProfilePage() {
           <form onSubmit={handleUpdatePassword} className="space-y-6 max-w-2xl">
             <div className="p-6 rounded-xl border border-slate-800 bg-slate-900/10 space-y-4">
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-                    <input
-                      type="password"
-                      required
-                      className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-orbit-purple"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                    />
+                {hasPassword && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                      Current Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                      <input
+                        type="password"
+                        required
+                        className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-orbit-purple"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">

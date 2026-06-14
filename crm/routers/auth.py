@@ -100,7 +100,7 @@ class ProfileUpdate(BaseModel):
 
 
 class PasswordUpdate(BaseModel):
-    current_password: str
+    current_password: Optional[str] = None
     new_password: str = Field(..., min_length=6, max_length=128)
 
 
@@ -293,11 +293,13 @@ async def get_profile(org: OrgContext = Depends(get_org)):
         return res.data[0]
 
     res = supabase.table("organizations").select(
-        "company_name, customer_size, turnover, city, country, website"
+        "company_name, customer_size, turnover, city, country, website, password_hash"
     ).eq("id", org.org_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Organization not found")
-    return res.data[0]
+    data = res.data[0]
+    data["has_password"] = bool(data.pop("password_hash", None))
+    return data
 
 
 @router.put("/auth/profile")
@@ -338,8 +340,13 @@ async def update_password(body: PasswordUpdate, org: OrgContext = Depends(get_or
         raise HTTPException(status_code=404, detail="Organization not found")
         
     stored_hash = res.data[0].get("password_hash")
-    if not stored_hash or not verify_password(body.current_password, stored_hash):
-        raise HTTPException(status_code=401, detail="Incorrect current password")
+    
+    if stored_hash:
+        if not body.current_password or not verify_password(body.current_password, stored_hash):
+            raise HTTPException(status_code=401, detail="Incorrect current password")
+    else:
+        # User has no password set (Google OAuth). They can set it without current_password.
+        pass
         
     # Update with new password
     new_hash = hash_password(body.new_password)
