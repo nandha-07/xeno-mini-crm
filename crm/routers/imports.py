@@ -232,9 +232,10 @@ def _ingest_customers(df: pd.DataFrame, org_id: str) -> dict:
 
     if inserted_ids:
         _trigger_scoring(inserted_ids)
-        # Semantic embeddings in the background (non-blocking)
-        from services.customer_embedder import safe_embed_async
-        safe_embed_async(inserted_ids)
+        # Semantic embeddings disabled during import to prevent OOM on free tier.
+        # Run `python db/backfill_embeddings.py` manually to populate embeddings.
+        # from services.customer_embedder import safe_embed_async
+        # safe_embed_async(inserted_ids)
 
     return {"rows_imported": len(valid_rows), "rows_failed": len(errors), "errors": errors}
 
