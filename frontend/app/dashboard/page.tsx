@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { getSession } from "@/lib/auth";
 import { toast } from "sonner";
 
 interface DashboardStats {
@@ -31,8 +32,16 @@ export default function DashboardPage() {
   const [riskDistribution, setRiskDistribution] = useState<any[]>([]);
   const [aiBriefing, setAiBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
+    const s = getSession();
+    if (s?.role === "admin") {
+      setCompanyName(s.admin_selected_org_name || "Platform Admin");
+    } else {
+      setCompanyName(s?.company_name || "");
+    }
+
     async function loadData() {
       try {
         const [statsData, campData, rawData] = await Promise.all([
@@ -102,7 +111,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-            Dashboard
+            {companyName ? `Welcome ${companyName}, ` : ""}Dashboard
           </h1>
           <p className="text-slate-400 text-sm mt-1">
             Real-time D2C cohort insights and campaign tracking.
