@@ -23,9 +23,9 @@ const CHURN_COLOR: Record<string, string> = {
 
 const EXAMPLES = [
   "price-sensitive skincare lovers who lapsed",
-  "loyal high-value fragrance buyers in metro cities",
+  "loyal high-value wellness buyers in metro cities",
   "one-time makeup buyers worth winning back",
-  "eco-conscious customers who prefer WhatsApp",
+  "eco-conscious haircare customers who prefer WhatsApp",
 ];
 
 function simColor(s: number) {
