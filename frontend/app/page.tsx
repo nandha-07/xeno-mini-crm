@@ -320,6 +320,10 @@ export default function Home() {
                 Sign Up
               </Link>
             </div>
+            
+            <p className="mt-8 text-sm text-slate-400 font-medium animate-slideUp" style={{ animationDelay: "0.4s" }}>
+              Want to get a new Agentic AI CRM like this? <a href="mailto:nandhakumar0242@gmail.com" className="text-orbit-blue hover:text-white transition-colors underline underline-offset-4">Contact the developer</a>
+            </p>
           </div>
         </div>
       </section>
