@@ -6,6 +6,16 @@ Orbit is a full-stack, AI-native mini CRM built for Direct-to-Consumer and retai
 
 Built as a submission for the Xeno Engineering Take-Home Assignment (June 2026).
 
+### 🌐 Live Demo
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | [https://frontend-delta-lovat-49.vercel.app](https://frontend-delta-lovat-49.vercel.app) |
+| **CRM API** | [https://orbit-crm.onrender.com](https://orbit-crm.onrender.com/health) |
+| **Channel Service** | [https://orbit-channel.onrender.com](https://orbit-channel.onrender.com/health) |
+
+> ⚠️ **Note:** Render free-tier services spin down after 15 minutes of inactivity. The first request may take ~60 seconds while the server wakes up.
+
 **Repository:** https://github.com/nandha-07/xeno-mini-crm
 - **Backend codebase** → [`/crm`](https://github.com/nandha-07/xeno-mini-crm/tree/main/crm) (FastAPI API, AI engine, RFM scoring) · messaging service → [`/channel`](https://github.com/nandha-07/xeno-mini-crm/tree/main/channel)
 - **Frontend codebase** → [`/frontend`](https://github.com/nandha-07/xeno-mini-crm/tree/main/frontend) (Next.js 14 app)
@@ -121,12 +131,13 @@ This models how real messaging providers (Twilio, Gupshup, etc.) actually work �
 | Channel Service | Python 3.11 + FastAPI | Separate process, same language |
 | Task Queue | Celery 5 + Redis | Async jobs, retry logic, models real webhook pattern |
 | Database | Supabase (PostgreSQL 15) | Postgres + realtime subscriptions + auth + free hosted tier |
+| Vector Search | pgvector + Groq API embeddings | Semantic customer search via API-based embeddings (zero local memory) |
 | LLM Provider | Groq API (Llama 3.3 70B) | Free tier, ~200 tokens/s, supports function/tool calling |
 | RFM Scoring | pandas + numpy | Lightweight, no external ML service needed |
 | Frontend | Next.js 14 (App Router) | SSR, fast routing, React Server Components |
 | UI Components | shadcn/ui + Tailwind CSS | Enterprise-looking, accessible, fast to build with |
 | Realtime UI | Supabase Realtime (websocket) | Push campaign stat updates to frontend without polling |
-| Hosting — CRM | Render (free tier) | Easy FastAPI deploy, persistent workers |
+| Hosting — CRM | Render (free tier) | Easy FastAPI deploy, in-process task execution |
 | Hosting — Channel | Render (separate service) | Deploy as a second web service on same Render account |
 | Hosting — Frontend | Vercel (free tier) | Native Next.js hosting |
 | Hosting — Redis | Render Redis (free tier) | Shared between both services |
@@ -166,7 +177,8 @@ CRM/
 │   │   ├── ai_engine.py          # LLM calls (NL2Segment, personalization, summaries, agent)
 │   │   ├── import_mapper.py      # AI header-mapping for arbitrary CSV/XLSX schemas
 │   │   ├── customer_embedder.py  # Builds semantic embeddings in the background
-│   │   ├── embeddings.py / semantic.py  # Vector search helpers (pgvector)
+│   │   ├── embeddings.py         # Groq API-based embeddings (384-dim, zero local memory)
+│   │   ├── semantic.py           # Vector search helpers (pgvector RAG)
 │   │   ├── strategist.py         # Growth-strategy prompt orchestration
 │   │   ├── report_builder.py     # PDF rendering
 │   │   ├── email_templates.py    # HTML email rendering for the email channel
@@ -1443,14 +1455,24 @@ CITIES = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Pune",
 SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 SUPABASE_SERVICE_KEY=eyJhbGci...          # service role key (not anon key)
 
-# Groq
+# Groq (used for LLM + embeddings)
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
 
 # Redis (Celery broker)
 REDIS_URL=redis://localhost:6379/0
 
+# Set to true to run tasks in-process (no separate Celery worker needed)
+# Required on Render free tier to save memory
+CELERY_TASK_ALWAYS_EAGER=false
+
 # Channel service URL
 CHANNEL_SERVICE_URL=http://localhost:8001
+
+# Public URL of this CRM service (for email tracking pixels/links)
+PUBLIC_BASE_URL=http://localhost:8000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 
 # App
 PORT=8000
@@ -1468,6 +1490,19 @@ REDIS_URL=redis://localhost:6379/0
 # CRM receipt callback URL
 CRM_RECEIPT_URL=http://localhost:8000/api/v1/receipts
 
+# SMTP (Email)
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=your-email@gmail.com
+
+# Twilio (WhatsApp/SMS) — optional
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your-auth-token
+TWILIO_SMS_FROM=+1234567890
+TWILIO_WHATSAPP_FROM=whatsapp:+1234567890
+
 # App
 PORT=8001
 DEBUG=false
@@ -1479,6 +1514,7 @@ DEBUG=false
 NEXT_PUBLIC_CRM_API_URL=http://localhost:8000
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...   # anon key (public, safe for frontend)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
 ---
@@ -1573,21 +1609,49 @@ The `docker-compose.yml` starts: crm, channel, crm-worker, channel-worker, redis
 
 ### Render (CRM + Channel services)
 
-1. Create a new **Web Service** for `crm/`: build command `pip install -r requirements.txt`, start command `uvicorn main:app --host 0.0.0.0 --port $PORT`
-2. Create a **Background Worker** for CRM Celery: same build, start command `celery -A celery_app worker --loglevel=info --queues=crm`
-3. Create a new **Web Service** for `channel/`: same pattern, start command `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Create a **Background Worker** for Channel Celery: `celery -A celery_app worker --loglevel=info --queues=channel`
-5. Create a **Redis** instance on Render, copy the `REDIS_URL`
-6. Add all environment variables in the Render dashboard for each service
+The project uses a `render.yaml` Blueprint for infrastructure-as-code deployment. On Render's free tier (512MB RAM), we run tasks in-process to save memory.
+
+**orbit-crm (CRM API):**
+| Setting | Value |
+|---------|-------|
+| Runtime | Python 3 |
+| Root Directory | `crm` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Plan | Free |
+
+> **Free-tier optimization:** Set `CELERY_TASK_ALWAYS_EAGER=true` in environment variables. This runs background tasks (RFM scoring, campaign finalization) in-process instead of requiring a separate Celery worker, saving ~150MB RAM.
+
+**orbit-channel (Channel Service):**
+| Setting | Value |
+|---------|-------|
+| Runtime | Python 3 |
+| Root Directory | `channel` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Plan | Free |
+
+**orbit-redis:**
+| Setting | Value |
+|---------|-------|
+| Type | Redis |
+| Plan | Free |
+
+**Cross-service configuration (after first deploy):**
+- On `orbit-crm`: set `CHANNEL_SERVICE_URL` = `https://orbit-channel.onrender.com`
+- On `orbit-channel`: set `CRM_RECEIPT_URL` = `https://orbit-crm.onrender.com/api/v1/receipts`
 
 ### Vercel (Frontend)
 
-```bash
-cd frontend
-vercel deploy --prod
-```
-
-Add environment variables in the Vercel dashboard.
+1. Connect the GitHub repo to Vercel
+2. Set **Root Directory** to `frontend`
+3. Set **Framework Preset** to `Next.js`
+4. Add environment variables in the Vercel dashboard:
+   - `NEXT_PUBLIC_CRM_API_URL` = `https://orbit-crm.onrender.com`
+   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your Supabase anon key
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` = your Google OAuth client ID
+5. Deploy — Vercel auto-deploys on every push to `main`
 
 ---
 
@@ -1607,8 +1671,14 @@ Add environment variables in the Vercel dashboard.
 
 ### Conscious cuts
 
-- No real messaging provider integration (as per assignment spec)
 - No A/B testing on messages (would require splitting the segment and creating two sub-campaigns)
 - No unsubscribe handling (real product needs opt-out tracking per channel per customer)
-- No email templates (HTML email composition is a feature on its own)
 - Analytics cohort analysis is simplified (full cohort analysis would use window functions with date_trunc)
+
+---
+
+## 16. Author
+
+**Nandha Kumar K**
+- GitHub: [@nandha-07](https://github.com/nandha-07)
+- Email: nandhakumar0242@gmail.com
