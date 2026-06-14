@@ -306,7 +306,10 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col items-center pt-8 animate-slideUp" style={{ animationDelay: "0.3s" }}>
-            <div className="flex items-center justify-center gap-4 mt-8">
+            <p className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-2 mt-4">
+              Explore the Platform
+            </p>
+            <div className="flex items-center justify-center gap-4 mt-2">
               <Link 
                 href="/login" 
                 className="bg-gradient-to-r from-orbit-purple to-orbit-blue text-white px-8 py-4 rounded-full font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg shadow-orbit-purple/25"
