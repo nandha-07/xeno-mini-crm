@@ -35,10 +35,13 @@ export default function LoginPage() {
   const [orgId, setOrgId] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
 
-  // Org sign-up
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [turnover, setTurnover] = useState("");
   const [generatedOrgId, setGeneratedOrgId] = useState<string | null>(null);
 
   // Admin
@@ -69,10 +72,10 @@ export default function LoginPage() {
       const res = await api.auth.orgSignup({
         company_name: companyName.trim(),
         email: email.trim(),
-        customer_size: "1k-10k",
-        turnover: null,
-        city: null,
-        country: null,
+        customer_size: companySize || "1k-10k",
+        turnover: turnover || null,
+        city: city.trim() || null,
+        country: country.trim() || null,
         website: null,
         password: signupPassword,
       });
@@ -273,6 +276,57 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>CITY (Optional)</label>
+                        <input
+                          className={inputCls}
+                          placeholder="E.g. Mumbai"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>COUNTRY (Optional)</label>
+                        <input
+                          className={inputCls}
+                          placeholder="E.g. India"
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>COMPANY SIZE (Optional)</label>
+                        <select
+                          className={cn(inputCls, "appearance-none")}
+                          value={companySize}
+                          onChange={(e) => setCompanySize(e.target.value)}
+                        >
+                          <option value="">Select...</option>
+                          <option value="1-10">1-10 Employees</option>
+                          <option value="11-50">11-50 Employees</option>
+                          <option value="51-200">51-200 Employees</option>
+                          <option value="201-500">201-500 Employees</option>
+                          <option value="500+">500+ Employees</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>ANNUAL TURNOVER (Optional)</label>
+                        <select
+                          className={cn(inputCls, "appearance-none")}
+                          value={turnover}
+                          onChange={(e) => setTurnover(e.target.value)}
+                        >
+                          <option value="">Select...</option>
+                          <option value="< $1M">&lt; $1M</option>
+                          <option value="$1M - $5M">$1M - $5M</option>
+                          <option value="$5M - $20M">$5M - $20M</option>
+                          <option value="$20M+">$20M+</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <label className={labelCls}>PASSWORD *</label>
