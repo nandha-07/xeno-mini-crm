@@ -37,32 +37,33 @@ Built for the **Xeno Engineering Take-Home Assignment** (June 2026).
 ## Architecture
 
 ```
-┌─────────────────────┐         ┌──────────────────────────────────────────┐
-│   Next.js Frontend  │──REST──▶│           CRM Backend (FastAPI)           │
-│   (Vercel)          │◀──JSON──│                (Render)                   │
-└─────────────────────┘         │                                          │
-                                │  ┌──────────────┐  ┌──────────────────┐ │
-                                │  │  REST API     │  │    AI Engine     │ │
-                                │  │  15 routers   │  │  Groq + Llama   │ │
-                                │  └──────────────┘  └──────────────────┘ │
-                                │  ┌──────────────┐  ┌──────────────────┐ │
-                                │  │  RFM Scorer   │  │  Embeddings     │ │
-                                │  │  (pandas)     │  │  (Groq API)     │ │
-                                │  └──────────────┘  └──────────────────┘ │
-                                │  ┌──────────────────────────────────┐   │
-                                │  │   Supabase (PostgreSQL + pgvector)│   │
-                                │  └──────────────────────────────────┘   │
-                                └────────────────┬───────────────────────┘
-                                    POST /send   │   POST /receipts ▲
-                                                 ▼                  │
-                                ┌─────────────────────────────────────────┐
-                                │      Channel Service (FastAPI, Render)    │
-                                │  • Email (SMTP) / SMS+WhatsApp (Twilio)  │
-                                │  • Simulated delivery lifecycle          │
-                                │  • Fires receipt callbacks → CRM         │
-                                └─────────────────────────────────────────┘
+┌───────────────┐       ┌─────────────────────┐         ┌──────────────────────────────────────────┐
+│  Google Auth  │◀─SSO─▶│   Next.js Frontend  │──REST──▶│           CRM Backend (FastAPI)          │
+│  (OAuth 2.0)  │       │   (Vercel)          │◀──JSON──│                (Render)                  │
+└───────────────┘       └─────────────────────┘         │                                          │
+                                                        │  ┌──────────────┐  ┌──────────────────┐  │
+                                                        │  │  REST API    │  │    AI Engine     │  │
+                                                        │  │  15 routers  │  │  Groq + Llama    │  │
+                                                        │  └──────────────┘  └──────────────────┘  │
+                                                        │  ┌──────────────┐  ┌──────────────────┐  │
+                                                        │  │  RFM Scorer  │  │  Embeddings      │  │
+                                                        │  │  (pandas)    │  │  (Groq API)      │  │
+                                                        │  └──────────────┘  └──────────────────┘  │
+                                                        │  ┌──────────────────────────────────┐    │
+                                                        │  │ Supabase (PostgreSQL + pgvector) │    │
+                                                        │  └──────────────────────────────────┘    │
+                                                        └────────────────┬───────────────────────┘
+                                                            POST /send   │   POST /receipts ▲       
+                                                                         ▼                  │       
+                                                        ┌─────────────────────────────────────────┐ 
+                                                        │      Channel Service (FastAPI, Render)  │ 
+                                                        │  • Email (SMTP) / SMS+WhatsApp (Twilio) │ 
+                                                        │  • Simulated delivery lifecycle         │ 
+                                                        │  • Fires receipt callbacks → CRM        │ 
+                                                        └─────────────────────────────────────────┘ 
 
 Redis ──── Celery task queue (shared by both services)
+Google ─── OAuth 2.0 Identity Provider
 Groq  ──── LLM API (Llama 3.3 70B) + Embeddings API
 ```
 
