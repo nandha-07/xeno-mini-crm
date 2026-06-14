@@ -40,7 +40,7 @@ async def get_env_settings(org: OrgContext = Depends(get_org)):
     """Fetch current settings from .env files."""
     
     # Ensure role is admin to view keys
-    if org.role != "admin":
+    if not org.is_admin:
         raise HTTPException(status_code=403, detail="Only admins can view environment settings.")
 
     # Read CRM env
@@ -70,7 +70,7 @@ async def get_env_settings(org: OrgContext = Depends(get_org)):
 async def update_env_settings(body: EnvSettings, org: OrgContext = Depends(get_org)):
     """Update settings in .env files."""
     
-    if org.role != "admin":
+    if not org.is_admin:
         raise HTTPException(status_code=403, detail="Only admins can edit environment settings.")
 
     def set_key(file_path: pathlib.Path, key: str, value: Optional[str]):
