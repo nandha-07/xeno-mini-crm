@@ -103,6 +103,16 @@ export default function SupportPage() {
         </div>
       </div>
 
+      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+        <div>
+          <h3 className="text-orange-500 font-semibold text-sm">Feature Under Testing</h3>
+          <p className="text-orange-400/80 text-sm mt-1">
+            The Support Center is currently under testing and is unavailable to use. Submitted tickets will not be processed at this time.
+          </p>
+        </div>
+      </div>
+
       {isAdmin ? (
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
