@@ -92,49 +92,6 @@ def _hash_embed(text: str) -> list[float]:
     return [x / norm for x in vec]
 
 
-# ── Groq API embeddings ──────────────────────────────────────────────────────
-
-def _groq_embed(texts: list[str]) -> list[list[float]] | None:
-    """
-    Call Groq's embedding endpoint. Returns None if unavailable or on error.
-    Uses a lightweight model that returns 384-dim vectors.
-    """
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        return None
-    try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.post(
-                "https://api.groq.com/openai/v1/embeddings",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "llama-3.2-1b",
-                    "input": texts,
-                },
-            )
-            if resp.status_code != 200:
-                logger.warning("Groq embedding API returned %s: %s", resp.status_code, resp.text[:200])
-                return None
-            data = resp.json()
-            embeddings = [item["embedding"] for item in data["data"]]
-            # Truncate or pad to EMBED_DIM
-            result = []
-            for emb in embeddings:
-                if len(emb) >= EMBED_DIM:
-                    result.append(emb[:EMBED_DIM])
-                else:
-                    result.append(emb + [0.0] * (EMBED_DIM - len(emb)))
-            return result
-    except Exception as e:
-        logger.warning("Groq embedding API call failed: %s", e)
-        return None
-
-
-# ── Public API ────────────────────────────────────────────────────────────────
-
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts -> list of 384-d float vectors."""
     if not texts:
@@ -142,13 +99,9 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     if os.environ.get("DISABLE_AI_EMBEDDINGS", "false").lower() == "true":
         return [[0.0] * EMBED_DIM for _ in texts]
 
-    # Try Groq API first (zero local memory)
-    result = _groq_embed(texts)
-    if result is not None:
-        return result
-
-    # Fallback: deterministic hash embedding (always works, zero memory)
-    logger.info("Using hash-based fallback embeddings for %d texts", len(texts))
+    # Groq does not officially support text embedding endpoints yet.
+    # To prevent 404 errors in production logs, we directly use the lightweight deterministic hash embedding.
+    # It requires zero local memory and never fails.
     return [_hash_embed(t) for t in texts]
 
 
