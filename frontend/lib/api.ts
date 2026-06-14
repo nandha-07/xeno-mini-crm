@@ -32,7 +32,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error?.detail ?? `API error ${res.status}`);
+    let errMsg = `API error ${res.status}`;
+    if (error?.detail) {
+      if (Array.isArray(error.detail)) {
+        errMsg = error.detail.map((e: any) => `${e.loc?.slice(-1)[0] || 'Field'}: ${e.msg}`).join(", ");
+      } else if (typeof error.detail === "string") {
+        errMsg = error.detail;
+      } else {
+        errMsg = JSON.stringify(error.detail);
+      }
+    }
+    throw new Error(errMsg);
   }
   if (res.status === 204) {
     return null as any;

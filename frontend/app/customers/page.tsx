@@ -119,12 +119,23 @@ export default function CustomersPage() {
     e.preventDefault();
     if (!newFirstName) return toast.error("First name is required.");
     setCreating(true);
+    let formattedPhone = newPhone?.trim() || undefined;
+    if (formattedPhone && !formattedPhone.startsWith("+")) {
+      // If it looks like an Indian number without +91, we can prepend +91. 
+      // But safest is just to prepend + if they just missed it, or +91 if length is 10.
+      if (formattedPhone.length === 10) {
+        formattedPhone = "+91" + formattedPhone;
+      } else {
+        formattedPhone = "+" + formattedPhone;
+      }
+    }
+
     try {
       const res = await api.customers.create({
         first_name: newFirstName,
         last_name: newLastName || undefined,
         email: newEmail || undefined,
-        phone: newPhone || undefined,
+        phone: formattedPhone,
       });
       // We manually add it to the top of the list
       setCustomers((prev) => [res, ...prev]);
