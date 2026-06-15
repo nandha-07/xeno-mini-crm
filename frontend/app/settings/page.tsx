@@ -13,6 +13,7 @@ import {
   Lock,
   Database,
   Save,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -192,6 +193,19 @@ export default function SettingsPage() {
                 what the data is, maps your headers to our schema, and normalises values (phones, channels,
                 dates, currency) automatically.
               </p>
+
+              {/* Sample Files Download */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-950/40 p-4 rounded-lg border border-slate-800/60 mt-2 mb-2">
+                <span className="text-sm font-medium text-slate-400">Need some sample data to try it out?</span>
+                <div className="flex gap-3">
+                  <a href="/sample_customers.xlsx" download className="text-xs font-semibold bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 text-slate-200 px-4 py-2 rounded-md transition-colors flex items-center gap-2 shadow-sm">
+                    <Download className="w-4 h-4 text-orbit-purple" /> Customers Data
+                  </a>
+                  <a href="/sample_orders.xlsx" download className="text-xs font-semibold bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 text-slate-200 px-4 py-2 rounded-md transition-colors flex items-center gap-2 shadow-sm">
+                    <Download className="w-4 h-4 text-orbit-blue" /> Orders Data
+                  </a>
+                </div>
+              </div>
 
               {/* Drag and Drop Box */}
               <div className="border-2 border-dashed border-slate-800 rounded-lg p-8 flex flex-col items-center justify-center gap-3 bg-slate-950/40 hover:bg-slate-950/60 transition-colors relative cursor-pointer group">
