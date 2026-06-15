@@ -9,6 +9,7 @@ import {
   Save,
   MapPin,
   Star,
+  AlertTriangle,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -125,6 +126,14 @@ export default function SmartSearchPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Info Card */}
+      <div className="mt-4 p-4 rounded-xl border border-orange-900/30 bg-orange-950/20 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
+        <p className="text-sm text-orange-200/80 leading-relaxed">
+          <strong className="text-orange-400 font-semibold">Feature Currently Unavailable:</strong> RAG-based semantic search requires significant memory resources. Running this on our current free Render deployment causes memory spikes and server failures. We have temporarily disabled this feature until we upgrade to a dedicated server and domain. However, you can see how powerfully it works in our demo video!
+        </p>
       </div>
 
       {/* Results */}
